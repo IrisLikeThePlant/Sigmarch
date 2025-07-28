@@ -9,7 +9,7 @@ class RootScreen : ScreenObject
     public RootScreen()
     {
         _world = new World();
-        _worldSurface = new WorldSurface(80, 50, _world);
+        _worldSurface = new WorldSurface(GameSettings.GAME_WIDTH, GameSettings.GAME_HEIGHT, _world);
         Children.Add(_worldSurface);
     }
 
@@ -21,7 +21,7 @@ class RootScreen : ScreenObject
 
     public override void Update(TimeSpan delta)
     {
-        _worldSurface.Update();
+        _worldSurface.Update(delta);
         base.Update(delta);
     }
 }

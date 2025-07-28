@@ -21,4 +21,13 @@
     <PackageReference Include="SadConsole.Extended" Version="10.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+  <Content Include="Font\LCD_Tileset.font">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  <Content Include="Font\LCD_Tileset.png">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+  </ItemGroup>
+
 </Project>

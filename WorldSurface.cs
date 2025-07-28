@@ -17,9 +17,10 @@ public class WorldSurface : ScreenSurface
         _world.Render(this);
     }
 
-    public void Update()
+    public new void Update(TimeSpan delta)
     {
-        _world.Update();
+        _world.MousePos = GetMouseCellPosition();
+        _world.Update(delta);
     }
 
     public override bool ProcessMouse(MouseScreenObjectState state)
@@ -32,13 +33,17 @@ public class WorldSurface : ScreenSurface
             Point targetPoint = new Point(state.Mouse.ScreenPosition.X / FontSize.X, state.Mouse.ScreenPosition.Y / FontSize.Y);
             if (Surface.IsValidCell(targetPoint.X, targetPoint.Y))
             {
-                MovementAction action = new MovementAction(targetPoint);
-                _world.ActiveActor.Execute(action);
-                _world.ActiveActor = _world.ActivatableAllies.Dequeue();
+                _world.MovementPath = _world.ActivePath.GetRange(0, Math.Min(10, _world.ActivePath.Count)); // this should be in World!
+                _world.isMoving = true;
             }
             handled = true;
         }
 
         return handled;
+    }
+
+    private Point GetMouseCellPosition()
+    {
+        return new Point(_world.MousePos.X / FontSize.X, _world.MousePos.Y / FontSize.Y);
     }
 }

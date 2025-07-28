@@ -1,5 +1,4 @@
-using Microsoft.Xna.Framework.Input;
-using SadConsole.Ansi;
+using SadRogue.Primitives.GridViews;
 
 namespace Sigmarch;
 
@@ -12,14 +11,20 @@ public class World
     public Actor ActiveActor;
     public readonly List<Actor> Actors = new();
     public Queue<Actor> ActivatableAllies = new();
-    public Queue<Actor> ActivatableEnemies;
+    public Queue<Actor> ActivatableEnemies = new();
+    public List<Point> ActivePath = new();
+    public List<Point> MovementPath = new();
     public Point MousePos = new Point(0, 0);
+    private float _animationStep = 0.0f;
+    public bool isMoving = false;
 
     public World()
     {
-        Width = 80;
-        Height = 50;
-        _tiles = new Tile[Width, Height];
+        Width = GameSettings.GAME_WIDTH;
+        Height = GameSettings.GAME_HEIGHT;
+
+        MapGenerator generator = new(Width, Height);
+        _tiles = generator.BuildMap(MapGenerationType.River);
 
         Actors.Add(new Actor(100, Faction.Ally, new ColoredGlyph(Color.White, Color.Black, '1')));
         Actors.Add(new Actor(100, Faction.Ally, new ColoredGlyph(Color.White, Color.Black, '2')));
@@ -29,6 +34,7 @@ public class World
         PopulateActivatableAllies();
 
         ActiveActor = ActivatableAllies.Dequeue();
+        ActivePath = FindPath(new Point(40, 15), ActiveActor);
 
         TestRender();
     }
@@ -41,11 +47,31 @@ public class World
         }
     }
 
-    public void Update()
+    public void Update(TimeSpan delta)
     {
         if (ActivatableAllies.Count == 0)
         {
             PopulateActivatableAllies();
+        }
+
+        ActivePath = FindPath(MousePos, ActiveActor);
+
+        if (isMoving)
+        {
+            _animationStep += delta.Ticks;
+            if (_animationStep > 0.5f)
+            {
+                _animationStep = 0.0f;
+                MovementAction action = new MovementAction(MovementPath[0]);
+                ActiveActor.Execute(action);
+                MovementPath.RemoveAt(0);
+
+                if (MovementPath.Count == 0)
+                {
+                    isMoving = false;
+                    ActiveActor = ActivatableAllies.Dequeue();
+                }
+            }
         }
     }
 
@@ -61,7 +87,10 @@ public class World
 
         RenderActors(surface);
 
-        surface.DrawLine(ActiveActor.Position, GetMouseCellPosition(surface), null, null, Color.Red, null);
+        for (int i = 0; i < Math.Min(10, ActivePath.Count()); ++i)
+        {
+            new ColoredGlyph(Color.Red, Color.Red, ' ').CopyAppearanceTo(surface.Surface[ActivePath[i].X, ActivePath[i].Y]);
+        }
     }
 
     public void RenderActors(ScreenSurface surface)
@@ -74,23 +103,26 @@ public class World
 
     private void TestRender()
     {
-        for (var x = 0; x < Width; x++)
-        {
-            for (var y = 0; y < Height; y++)
-            {
-                _tiles[x, y] = new Tile(new ColoredGlyph(Color.White, Color.Black, ' '), true);
-            }
-        }
-
         // spawn actor
         for (var idx = 0; idx < Actors.Count; ++idx)
         {
-            Actors[idx].Position = new Point(10 + idx, 15);
+            Actors[idx].Position = new Point(GameSettings.GAME_WIDTH / 2 + idx, GameSettings.GAME_HEIGHT / 2);
         }
     }
 
-    private Point GetMouseCellPosition(ScreenSurface surface)
+    private List<Point> FindPath(Point target, Actor activeActor)
     {
-        return new Point(MousePos.X / surface.FontSize.X, MousePos.Y / surface.FontSize.Y);
+        return Pathfinder.GetPath(activeActor.Position, target, this);
+    }
+
+    public bool IsTileWalkable(Point pos)
+    {
+        return true;
+        // return _tiles[pos.X, pos.Y].Walkable; it's oob because of when it gets initialized, should be fixed once we stop drawing by default
+    }
+
+    public bool IsWithinMap(Point pos)
+    {
+        return pos.X >= 0 && pos.Y >= 0 && pos.X <= GameSettings.GAME_WIDTH && pos.Y <= GameSettings.GAME_HEIGHT;
     }
 }

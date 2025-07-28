@@ -8,7 +8,7 @@ Builder gameStartup = new Builder()
     .SetStartingScreen<RootScreen>()
     .ShowMonoGameFPS()
     .IsStartingScreenFocused(true)
-    // .ConfigureFonts(true)
+    .ConfigureFonts("Font/LCD_Tileset.font")
     ;
 
 Game.Create(gameStartup);
